@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "doctor-testerson"
+version = "0.1.0a0"
+description = "Provides a stupid little `dr.t` command to run Python doctests."
+authors = [
+  "nrser <neil@neilsouza.com>"
+]
+license = "BSD-3-Clause"
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD License",
+]
+include = [
+  "LICENSE"
+]
+packages = [
+  {include = "doctor_testerson"},
+]
+
+[tool.poetry.urls]
+Homepage = "https://github.com/nrser/doctor-testerson"
+
+[tool.poetry.scripts]
+"dr.t" = "doctor_testerson:main"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+rich = ">=9"
+Pint = "^0.19.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^5.2"
+black = "^22.3.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
