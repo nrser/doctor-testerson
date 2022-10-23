@@ -16,6 +16,7 @@ from rich.console import Console
 from pint import UnitRegistry
 
 OUT = Console(file=sys.stdout)
+ERR = Console(file=sys.stderr)
 
 POETRY_FILENAME = "pyproject.toml"
 SETUP_FILENAME = "setup.py"
@@ -249,7 +250,7 @@ def main(argv: List[str] = sys.argv):
     results = test_targets(args)
 
     if args.fail_fast is True and has_errors(results):
-        print("Failed... FAST. 🏎 🏎", file=sys.stderr)
+        ERR.print("[/red]Failed... FAST. 🏎 🏎[/]")
         sys.exit(1)
 
     table = Table(title="Doctest Results")
