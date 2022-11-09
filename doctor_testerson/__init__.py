@@ -250,7 +250,7 @@ def main(argv: List[str] = sys.argv):
     results = test_targets(args)
 
     if args.fail_fast is True and has_errors(results):
-        ERR.print("[/red]Failed... FAST. 🏎 🏎[/]")
+        ERR.print("[red]Failed... FAST. 🏎 🏎[/]")
         sys.exit(1)
 
     table = Table(title="Doctest Results")
