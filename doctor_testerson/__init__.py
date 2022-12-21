@@ -11,7 +11,12 @@ from time import monotonic_ns
 
 from rich.text import Text
 from rich.table import Table
-from rich.console import Console
+from rich.console import Console, Group
+from rich.panel import Panel
+from rich.style import Style
+from rich.pretty import Pretty
+from rich.tree import Tree
+import rich.box
 
 from pint import UnitRegistry
 
@@ -106,6 +111,13 @@ def build_parser():
         action="store_false",
         default=None,
         help="Hide empty files (those with no doctests) in results",
+    )
+    parser.add_argument(
+        "-p",
+        "--panel",
+        action="store_true",
+        default=False,
+        help="Print an ostentatious header panel before running tests",
     )
     parser.add_argument(
         "targets", nargs="+", help="Specific module names or file paths to run"
@@ -244,8 +256,41 @@ def has_errors(results) -> bool:
     return any(result.tests.failed > 0 for result in results)
 
 
+def print_header_panel(args: Namespace) -> None:
+    cwd = Path.cwd()
+    tree = Tree(
+        Text("Dr. T! These files need your help!", style=Style(italic=True))
+    )
+
+    for target in args.targets:
+        try:
+            item = str(Path(target).relative_to(cwd))
+        except ValueError:
+            item = target
+        tree.add(item)
+
+    OUT.print(
+        Panel(
+            Group(
+                # Text("Attention needed in files:"),
+                tree,
+            ),
+            title=Text(
+                "+++ Dr. Testerson +++",
+                style=Style(bold=True),
+            ),
+            title_align="center",
+            box=rich.box.HEAVY,
+            style=Style(color="black", bgcolor="red"),
+        )
+    )
+
+
 def main(argv: List[str] = sys.argv):
     args = get_args(argv)
+
+    if args.panel is True:
+        print_header_panel(args)
 
     results = test_targets(args)
 
