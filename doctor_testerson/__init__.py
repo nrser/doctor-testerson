@@ -1,22 +1,21 @@
 from argparse import ArgumentParser, Namespace
-from functools import cached_property, reduce
-from numbers import Real
+from functools import cached_property
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, List, Literal, Union
 import sys
 import doctest
 from importlib import import_module
 from dataclasses import dataclass
 from time import monotonic_ns
+from types import ModuleType
 
 from rich.text import Text
 from rich.table import Table
-from rich.console import Console, Group
+from rich.console import Console
 from rich.panel import Panel
 from rich.style import Style
-from rich.pretty import Pretty
 from rich.tree import Tree
-import rich.box
+from rich.box import HEAVY
 
 from pint import UnitRegistry
 
@@ -27,8 +26,6 @@ POETRY_FILENAME = "pyproject.toml"
 SETUP_FILENAME = "setup.py"
 UREG = UnitRegistry()
 Qty = UREG.Quantity
-
-ModuleType = type(sys)
 
 
 @dataclass(frozen=True)
@@ -68,7 +65,7 @@ def now() -> Qty:
     return Qty(monotonic_ns(), "ns")
 
 
-def percent(numerator: Real, denominator: Real) -> str:
+def percent(numerator: float, denominator: float) -> Text:
     if denominator == 0:
         return Text("-", style="bright black")
 
@@ -129,8 +126,18 @@ def get_args(argv: List[str]) -> Namespace:
     return build_parser().parse_args(argv[1:])
 
 
+def is_poetry_root(dir: Path) -> bool:
+    return (dir / POETRY_FILENAME).is_file()
+
+
+def is_setup_py_root(dir: Path) -> bool:
+    return (dir / SETUP_FILENAME).is_file() and not (
+        dir / "__init__.py"
+    ).is_file()
+
+
 def is_package_root(dir: Path) -> bool:
-    return (dir / POETRY_FILENAME).is_file() or (dir / SETUP_FILENAME).is_file()
+    return is_poetry_root(dir) or is_setup_py_root(dir)
 
 
 def to_module_name(file_path: Path) -> str:
@@ -149,7 +156,9 @@ def to_module_name(file_path: Path) -> str:
     return ".".join((rel_path.parent / rel_path.stem).parts)
 
 
-def resolve_target(target: str):
+def resolve_target(
+    target: str,
+) -> tuple[Literal["module"], str] | tuple[Literal["text_file"], Path]:
     path = Path(target).resolve()
 
     if not path.exists():
@@ -201,15 +210,15 @@ def test_target(target, args: Namespace) -> Union[ModuleResult, TextFileResult]:
     if args.fail_fast is True:
         option_flags = option_flags | doctest.FAIL_FAST
 
-    test_type, resolved_target = resolve_target(target)
+    resolution = resolve_target(target)
 
-    if test_type == "module":
-        return test_module(target, resolved_target, option_flags)
-    elif test_type == "text_file":
-        return test_text_file(target, resolved_target, option_flags)
+    if resolution[0] == "module":
+        return test_module(target, resolution[1], option_flags)
+    elif resolution[0] == "text_file":
+        return test_text_file(target, resolution[1], option_flags)
     else:
-        raise ValueError(
-            f"Expected 'module' or 'text_file' test type, got {test_type!r}"
+        raise TypeError(
+            f"Expected 'module' or 'text_file' test type, got {resolution[0]!r}"
         )
 
 
@@ -271,16 +280,13 @@ def print_header_panel(args: Namespace) -> None:
 
     OUT.print(
         Panel(
-            Group(
-                # Text("Attention needed in files:"),
-                tree,
-            ),
+            tree,
             title=Text(
                 "+++ Dr. Testerson +++",
                 style=Style(bold=True),
             ),
             title_align="center",
-            box=rich.box.HEAVY,
+            box=HEAVY,
             style=Style(color="black", bgcolor="red"),
         )
     )
@@ -319,20 +325,20 @@ def main(argv: List[str] = sys.argv):
             ),
         )
 
-    # Add an empty row at the bottom with a line under it visually sperate
+    # Add an empty row at the bottom with a line under it visually separate
     # the summary row
     table.add_row(None, None, None, None, None, end_section=True)
 
-    total_delta_t, total_attempted, total_passed, total_failed = reduce(
-        lambda memo, result: (
-            memo[0] + result.delta_t,
-            memo[1] + result.tests.attempted,
-            memo[2] + result.tests_passed,
-            memo[3] + result.tests.failed,
-        ),
-        results,
-        (0, 0, 0, 0),
-    )
+    total_delta_t: Qty = Qty(0, "ms")
+    total_attempted: int = 0
+    total_passed: int = 0
+    total_failed: int = 0
+
+    for result in results:
+        total_delta_t += result.delta_t
+        total_attempted += result.tests.attempted
+        total_passed += result.tests_passed
+        total_failed += result.tests.failed
 
     table.add_row(
         "[bold]Total[/]",
