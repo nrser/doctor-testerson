@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "doctor-testerson"
-version = "0.1.0"
+version = "0.1.1-dev"
 description = "Provides a stupid little `dr.t` command to run Python doctests."
 authors = [
   "nrser <neil@neilsouza.com>"
