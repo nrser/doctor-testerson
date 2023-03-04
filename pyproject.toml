@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "doctor-testerson"
-version = "0.1.0a0"
+version = "0.1.0"
 description = "Provides a stupid little `dr.t` command to run Python doctests."
 authors = [
   "nrser <neil@neilsouza.com>"
@@ -22,15 +22,15 @@ packages = [
 Homepage = "https://github.com/nrser/doctor-testerson"
 
 [tool.poetry.scripts]
-"dr.t" = "doctor_testerson:main"
+"dr.t" = "doctor_testerson.__main__:main"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.10"
 rich = ">=9"
 Pint = "^0.19.2"
+tomli = "^2.0.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
 black = "^22.3.0"
 
 [build-system]
